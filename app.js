@@ -5,13 +5,12 @@ const bodyParser = require('body-parser')
 const {
     checkName,
     updateItem,
+    displayBudget,
+    updateTotalBudget,
     invalidAmount,
     duplicateItem,
-    totalBudget,
-    amountBudgeted,
     envelopes
-} = require('./util.js');
-
+} = require('./util.js')
 
 const PORT = process.env.PORT || 4001
 
@@ -20,10 +19,8 @@ app.use(bodyParser.json())
 
 
 
-
-
 const apiRouter = express.Router()
-app.use('/envelopes', apiRouter)
+app.use('/', apiRouter)
 
 apiRouter.param('envelopeName', (req, res, next, envelopeName) => {
     const envArr = envelopes.filter(x => x.hasOwnProperty(envelopeName))[0]
@@ -57,25 +54,36 @@ apiRouter.param('itemName', (req, res, next, name) => {
     }
 })
 
-apiRouter.get('/', (req, res, next) => {
+
+// GET all envelopes
+apiRouter.get('/envelopes', (req, res, next) => {
     res.send(envelopes)
 })
 
-apiRouter.get('/:envelopeName', (req, res, next) => {
+
+// GET envelope by it's name
+apiRouter.get('/envelopes/:envelopeName', (req, res, next) => {
     res.send([req.envelope, req.index])
 })
 
-apiRouter.post('/:newName', (req, res, next) => {
-    const envName = req.params.newName
+// GET total budget
+apiRouter.get('/budget', (req, res, next) => {
+    res.send(displayBudget())
+})
+
+// POST a new blank envelope
+apiRouter.post('/envelopes/:newEnv', (req, res, next) => {
+    const envName = req.params.newEnv
     if (!checkName(envName)) {
-        envelopes.push({envName: {items: [], budget: 0, idCount: 0}})
+        envelopes.push({envName: {items: [], budget: 0, remainingBudget: 0}})
         res.send(envelopes)
     } else if (checkName) {
         res.status(400).send(`${envName} already exists.`)
     }
 })
 
-apiRouter.post('/:envelopeName/:itemName/:amount', (req, res, next) => {
+// POST a new item into an existing envelope
+apiRouter.post('/envelopes/:envelopeName/:itemName/:amount', (req, res, next) => {
     const updates = {name: req.itemName,
                     amount:  req.amount}
     const updatedEnvelope = updateItem(req.index, updates)
@@ -86,6 +94,16 @@ apiRouter.post('/:envelopeName/:itemName/:amount', (req, res, next) => {
         res.send(updatedEnvelope)
     } else {
         res.sendStatus(400)
+    }
+})
+
+// PUT total budget
+apiRouter.put('/budget/:amount', (req, res, next) => {
+    const result = updateTotalBudget(req.amount)
+    if (result) {
+        res.send(displayBudget())
+    } else {
+        res.status(400).send('New total is less than the remaining budget.')
     }
 })
 
