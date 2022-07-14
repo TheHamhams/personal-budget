@@ -4,9 +4,10 @@ const cors = require('cors');
 const bodyParser = require('body-parser')
 const {
     checkName,
-    updateItem,
+    addItem,
     displayBudget,
     updateTotalBudget,
+    updateItem,
     invalidAmount,
     duplicateItem,
     envelopes
@@ -72,7 +73,7 @@ apiRouter.get('/budget', (req, res, next) => {
 })
 
 // POST a new blank envelope
-apiRouter.post('/envelopes/:newEnv', (req, res, next) => {
+apiRouter.post('/envelopes/new/:newEnv', (req, res, next) => {
     const envName = req.params.newEnv
     if (!checkName(envName)) {
         envelopes.push({envName: {items: [], budget: 0, remainingBudget: 0}})
@@ -83,15 +84,27 @@ apiRouter.post('/envelopes/:newEnv', (req, res, next) => {
 })
 
 // POST a new item into an existing envelope
-apiRouter.post('/envelopes/:envelopeName/:itemName/:amount', (req, res, next) => {
+apiRouter.post('/envelopes/items/:envelopeName/:itemName/:amount', (req, res, next) => {
     const updates = {name: req.itemName,
                     amount:  req.amount}
-    const updatedEnvelope = updateItem(req.index, updates)
+    const updatedEnvelope = addItem(req.index, updates)
     if (updatedEnvelope === duplicateItem) {
         res.status(400).send(duplicateItem)
     }
     else if (updatedEnvelope) {
         res.send(updatedEnvelope)
+    } else {
+        res.sendStatus(400)
+    }
+})
+
+// PUT item from specific envelope
+apiRouter.put('/envelopes/items/:envelopeName/:itemName/:amount', (req, res, next) => {
+    const updates = {name: req.itemName,
+                    amount:  req.amount}
+    result = updateItem(req.index, updates)
+    if (result) {
+        res.send(result)
     } else {
         res.sendStatus(400)
     }

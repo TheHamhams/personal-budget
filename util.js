@@ -2,7 +2,7 @@ let totalBudget = 1000
 let remainingBudget = 900
 let envelopes = [
     {food: {items: [], budget: 0, remainingBudget: 0}},
-    {fun: {items: [], budget: 100, remainingBudget: 100}},
+    {fun: {items: [{name: 'test', amount: 40}], budget: 100, remainingBudget: 60}},
     {savings: {items: [], budget: 0, remainingBudget: 0}},
     {upkeep: {items: [], budget: 0, remainingBudget: 0}}
 ]
@@ -33,7 +33,7 @@ function checkBudget(envBudget, amount) {
 }
 
 // Adds a new item to a specific envelope
-function updateItem(index, dict) {
+function addItem(index, dict) {
     const envelope = envelopes[index]
     const name = Object.keys(envelope)[0]
     if (!checkItemName(envelope[name], dict.name))
@@ -48,13 +48,15 @@ function updateItem(index, dict) {
     }
 }
 
-const displayBudget = () => {
+// Returns total and remaining budget
+function displayBudget() {
     return {
         'Total Budget': totalBudget,
         'Remaining Budget': remainingBudget
     }
 }
 
+// Updates total and remaining budgets
 function updateTotalBudget(amount) {
     if (amount >= remainingBudget) {
         const diff = totalBudget - remainingBudget
@@ -66,11 +68,31 @@ function updateTotalBudget(amount) {
     }
 }
 
+// Updates item in envelope items array
+function updateItem(envIndex, dict) {
+    const envelope = envelopes[envIndex]
+    const name = Object.keys(envelope)[0]
+    let diff = 0
+    for (let item of envelope[name].items) {
+        if (item.name === dict.name) {
+            diff = item.amount - dict.amount
+            if (checkBudget(envelope[name].remainingBudget, diff)) {
+                item.name = dict.name
+                item.amount = dict.amount
+                envelope[name].remainingBudget += diff
+                return envelope
+            }
+        }
+    }
+    return false
+}
+
 module.exports = {
     checkName,
-    updateItem,
+    addItem,
     displayBudget,
     updateTotalBudget,
+    updateItem,
     invalidAmount,
     duplicateItem,
     envelopes
