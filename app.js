@@ -2,27 +2,24 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const bodyParser = require('body-parser')
+const {
+    checkName,
+    updateItem,
+    invalidAmount,
+    duplicateItem,
+    totalBudget,
+    amountBudgeted,
+    envelopes
+} = require('./util.js');
 
-module.exports = app
 
 const PORT = process.env.PORT || 4001
 
 app.use(cors())
 app.use(bodyParser.json())
 
-let totalBudget = 0
-let ammountBudgeted = 0
-let envelopes = [
-    {food: {items: [], budget: 0, idCount: 0}},
-    {fun: {items: [], budget: 0, idCount: 0}},
-    {savings: {items: [], budget: 0, idCount: 0}},
-    {upkeep: {items: [], budget: 0, idCount: 0}}
-]
 
-function checkName(name) {
-    const result =  envelopes.filter(x => x.hasOwnProperty(name))
-    return (result.length > 0)
-}
+
 
 
 const apiRouter = express.Router()
@@ -37,6 +34,26 @@ apiRouter.param('envelopeName', (req, res, next, envelopeName) => {
         next()
     } else {
         res.sendStatus(400)
+    }
+})
+
+apiRouter.param('amount', (req, res, next, amount) => {
+    amount = Number(amount)
+    if (amount > 0) {
+        req.amount = amount
+        next()
+    } else {
+        res.status(404).send('Invalid amount')
+    }
+})
+
+apiRouter.param('itemName', (req, res, next, name) => {
+    name = String(name)
+    if (name) {
+        req.itemName = name
+        next()
+    } else {
+        res.status(400).send('Invalid item name')
     }
 })
 
@@ -56,6 +73,20 @@ apiRouter.post('/:newName', (req, res, next) => {
     } else if (checkName) {
         res.status(400).send(`${envName} already exists.`)
     }
-}) 
+})
+
+apiRouter.post('/:envelopeName/:itemName/:amount', (req, res, next) => {
+    const updates = {name: req.itemName,
+                    amount:  req.amount}
+    const updatedEnvelope = updateItem(req.index, updates)
+    if (updatedEnvelope === duplicateItem) {
+        res.status(400).send(duplicateItem)
+    }
+    else if (updatedEnvelope) {
+        res.send(updatedEnvelope)
+    } else {
+        res.sendStatus(400)
+    }
+})
 
 app.listen(PORT, () => console.log(`Server is listening on port ${PORT}`))
