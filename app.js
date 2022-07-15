@@ -8,6 +8,7 @@ const {
     displayBudget,
     updateTotalBudget,
     updateItem,
+    updateEnvBudget,
     invalidAmount,
     duplicateItem,
     envelopes
@@ -64,7 +65,7 @@ apiRouter.get('/envelopes', (req, res, next) => {
 
 // GET envelope by it's name
 apiRouter.get('/envelopes/:envelopeName', (req, res, next) => {
-    res.send([req.envelope, req.index])
+    res.send(req.envelope)
 })
 
 // GET total budget
@@ -84,9 +85,9 @@ apiRouter.post('/envelopes/new/:newEnv', (req, res, next) => {
 })
 
 // POST a new item into an existing envelope
-apiRouter.post('/envelopes/items/:envelopeName/:itemName/:amount', (req, res, next) => {
-    const updates = {name: req.itemName,
-                    amount:  req.amount}
+apiRouter.post('/envelopes/items/:envelopeName/', (req, res, next) => {
+    const updates = {name: req.query.itemName,
+                    amount:  req.query.amount}
     const updatedEnvelope = addItem(req.index, updates)
     if (updatedEnvelope === duplicateItem) {
         res.status(400).send(duplicateItem)
@@ -99,12 +100,27 @@ apiRouter.post('/envelopes/items/:envelopeName/:itemName/:amount', (req, res, ne
 })
 
 // PUT item from specific envelope
-apiRouter.put('/envelopes/items/:envelopeName/:itemName/:amount', (req, res, next) => {
-    const updates = {name: req.itemName,
-                    amount:  req.amount}
-    result = updateItem(req.index, updates)
-    if (result) {
-        res.send(result)
+apiRouter.put('/envelopes/:envelopeName/', (req, res, next) => {
+    const itemUpdates = {name: req.query.itemName,
+                    amount:  Number(req.query.amount),
+                    newName: req.query.newName,
+                }
+    const newBudget = Number(req.query.budget)
+    let budgetResult
+    let itemsResult
+    if (newBudget) {
+        budgetResult = updateEnvBudget(req.index, newBudget)
+    }
+    if (itemUpdates.newName || itemUpdates.amount) {
+        itemsResult = updateItem(req.index, itemUpdates)
+    }
+    if (budgetResult || itemsResult) {
+        budgetResult = displayBudget()
+        res.send({ 
+            envelope: envelopes[req.index],
+            'Total Budget':budgetResult['Total Budget'],
+            'Remaining Budget':budgetResult['Remaining Budget'] 
+        })
     } else {
         res.sendStatus(400)
     }

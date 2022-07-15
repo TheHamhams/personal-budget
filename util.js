@@ -72,19 +72,37 @@ function updateTotalBudget(amount) {
 function updateItem(envIndex, dict) {
     const envelope = envelopes[envIndex]
     const name = Object.keys(envelope)[0]
-    let diff = 0
     for (let item of envelope[name].items) {
         if (item.name === dict.name) {
             diff = item.amount - dict.amount
-            if (checkBudget(envelope[name].remainingBudget, diff)) {
-                item.name = dict.name
+            if (dict.newName) {
+                item.name = dict.newName
+            }
+            if (checkBudget(envelope[name].remainingBudget, diff) && dict.amount) {
+                const diff = item.amount - dict.amount
                 item.amount = dict.amount
                 envelope[name].remainingBudget += diff
-                return envelope
             }
+            return true
         }
     }
     return false
+}
+
+function updateEnvBudget(envIndex, amount) {
+    const envelope = envelopes[envIndex]
+    const name = Object.keys(envelope)[0]
+    const diff = amount - envelope[name].budget
+    console.log(diff)
+    if (envelope[name].remainingBudget + diff >= 0 && remainingBudget + diff >= 0) {
+        envelope[name].budget = amount 
+        envelope[name].remainingBudget += diff
+        
+        remainingBudget -= diff
+        return true
+    } else {
+        return false
+    }
 }
 
 module.exports = {
@@ -93,7 +111,10 @@ module.exports = {
     displayBudget,
     updateTotalBudget,
     updateItem,
+    updateEnvBudget,
     invalidAmount,
     duplicateItem,
+    totalBudget,
+    remainingBudget,
     envelopes
 }
