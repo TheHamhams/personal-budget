@@ -1,7 +1,7 @@
 let totalBudget = 1000
 let remainingBudget = 900
 let envelopes = [
-    {food: {items: [], budget: 0, remainingBudget: 0}},
+    {food: {items: [{name: 'test', amount: 50}], budget: 100, remainingBudget: 50}},
     {fun: {items: [{name: 'test', amount: 40}], budget: 100, remainingBudget: 60}},
     {savings: {items: [], budget: 0, remainingBudget: 0}},
     {upkeep: {items: [], budget: 0, remainingBudget: 0}}
@@ -27,9 +27,18 @@ function checkItemName(envelope, itemName) {
     return true
 }
 
+
 // Check to see if a new item will go over budget
 function checkBudget(envBudget, amount) {
     return (remainingBudget - amount >= 0 && envBudget - amount >= 0)
+}
+
+// Returns total and remaining budgets
+function displayBudget() {
+    return {
+        'Total Budget': totalBudget,
+        'Remaining Budget': remainingBudget
+    }
 }
 
 // Adds a new item to a specific envelope
@@ -45,14 +54,6 @@ function addItem(index, dict) {
         return envelopes[index]
     } else {
         return false
-    }
-}
-
-// Returns total and remaining budget
-function displayBudget() {
-    return {
-        'Total Budget': totalBudget,
-        'Remaining Budget': remainingBudget
     }
 }
 
@@ -89,6 +90,7 @@ function updateItem(envIndex, dict) {
     return false
 }
 
+// Updates item name and/or amount so long as it does not go over budget
 function updateEnvBudget(envIndex, amount) {
     const envelope = envelopes[envIndex]
     const name = Object.keys(envelope)[0]
@@ -97,11 +99,43 @@ function updateEnvBudget(envIndex, amount) {
     if (envelope[name].remainingBudget + diff >= 0 && remainingBudget + diff >= 0) {
         envelope[name].budget = amount 
         envelope[name].remainingBudget += diff
-        
         remainingBudget -= diff
         return true
     } else {
         return false
+    }
+}
+
+// Deletes entire envelope
+function deleteEnvelope(envIndex) {
+    envelopes.splice(envIndex, 1)
+}
+
+// Deletes item from envelope
+function deleteItem(envIndex, itemName) {
+    const envelope = envelopes[envIndex]
+    const name = Object.keys(envelope)[0]
+    for (let item of envelope[name].items) {
+        if (item.name === itemName) {
+            const index = envelope[name].items.indexOf(item)
+            envelope[name].remainingBudget += item.amount
+            envelope[name].items.pop(index)
+            return envelope
+        }
+    }
+    return false
+}
+
+// Transfers an a budget amount from one envelope to another
+function transferFunds(dict) {
+    let fromDict = envelopes.filter(x => x.hasOwnProperty(dict.fromName))[0]
+    let toDict = envelopes.filter(x => x.hasOwnProperty(dict.toName))[0]
+    if (fromDict[dict.fromName].remainingBudget - dict.amount >= 0) {
+        fromDict[dict.fromName].remainingBudget -= dict.amount 
+        fromDict[dict.fromName].budget -= dict.amount
+        toDict[dict.toName].remainingBudget += dict.amount
+        toDict[dict.toName].budget += dict.amount
+        return [fromDict, toDict]
     }
 }
 
@@ -112,9 +146,10 @@ module.exports = {
     updateTotalBudget,
     updateItem,
     updateEnvBudget,
+    deleteEnvelope,
+    deleteItem,
+    transferFunds,
     invalidAmount,
     duplicateItem,
-    totalBudget,
-    remainingBudget,
     envelopes
 }

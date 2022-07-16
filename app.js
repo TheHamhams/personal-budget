@@ -9,9 +9,11 @@ const {
     updateTotalBudget,
     updateItem,
     updateEnvBudget,
-    invalidAmount,
+    deleteEnvelope,
+    deleteItem,
+    transferFunds,
     duplicateItem,
-    envelopes
+    envelopes,
 } = require('./util.js')
 
 const PORT = process.env.PORT || 4001
@@ -20,29 +22,18 @@ app.use(cors())
 app.use(bodyParser.json())
 
 
-
 const apiRouter = express.Router()
 app.use('/', apiRouter)
 
 apiRouter.param('envelopeName', (req, res, next, envelopeName) => {
-    const envArr = envelopes.filter(x => x.hasOwnProperty(envelopeName))[0]
-    const name = Object.keys(envArr)[0]
+    const envelope = envelopes.filter(x => x.hasOwnProperty(envelopeName))[0]
+    const name = Object.keys(envelope)[0]
     if (checkName(name)) {
-        req.envelope = envArr
-        req.index = envelopes.indexOf(envArr)
+        req.envelope = envelope
+        req.index = envelopes.indexOf(envelope)
         next()
     } else {
         res.sendStatus(400)
-    }
-})
-
-apiRouter.param('amount', (req, res, next, amount) => {
-    amount = Number(amount)
-    if (amount > 0) {
-        req.amount = amount
-        next()
-    } else {
-        res.status(404).send('Invalid amount')
     }
 })
 
@@ -55,7 +46,6 @@ apiRouter.param('itemName', (req, res, next, name) => {
         res.status(400).send('Invalid item name')
     }
 })
-
 
 // GET all envelopes
 apiRouter.get('/envelopes', (req, res, next) => {
@@ -99,6 +89,23 @@ apiRouter.post('/envelopes/items/:envelopeName/', (req, res, next) => {
     }
 })
 
+apiRouter.put('/envelopes/transfer', (req, res, next) => {
+    let from = {
+        fromName: req.query.fromName,
+        toName: req.query.toName,
+        amount: Number(req.query.amount)
+    }
+    const resultArr = transferFunds(from)
+    if (resultArr) {
+        res.send({
+            from: resultArr[0],
+            to: resultArr[1]
+        })
+    } else {
+        res.sendStatus(400)
+    }
+})
+
 // PUT item from specific envelope
 apiRouter.put('/envelopes/:envelopeName/', (req, res, next) => {
     const itemUpdates = {name: req.query.itemName,
@@ -134,6 +141,23 @@ apiRouter.put('/budget/:amount', (req, res, next) => {
     } else {
         res.status(400).send('New total is less than the remaining budget.')
     }
+})
+
+
+// DELETE item from an envelope
+apiRouter.delete('/envelopes/:envelopeName/:itemName', (req, res, next) => {
+    let result = deleteItem(req.index, req.itemName)
+    if (result) {
+        res.status(204).send(result)
+    } else {
+        res.status(400).send('Item not found')
+    }
+})
+
+// DELETE envelope
+apiRouter.delete('/envelopes/:envelopeName', (req, res, next) => {
+    deleteEnvelope(req.index)
+    res.sendStatus(204)
 })
 
 app.listen(PORT, () => console.log(`Server is listening on port ${PORT}`))
