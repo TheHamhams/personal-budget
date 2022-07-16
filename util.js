@@ -8,7 +8,6 @@ let envelopes = [
 ]
 
 // Error messages
-const invalidAmount = 'This item puts this envelope over budget'
 const duplicateItem = 'This item already exists'
 
 // Check to see if an envelope name already exists
@@ -149,7 +148,6 @@ module.exports = {
     deleteEnvelope,
     deleteItem,
     transferFunds,
-    invalidAmount,
     duplicateItem,
     envelopes
 }
